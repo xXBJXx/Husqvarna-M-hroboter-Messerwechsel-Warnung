@@ -5,7 +5,7 @@
 
  - #### Rot markierte Stelle ist die id von dem Datenpunkt vom Husqvarna Mähroboter wo die gefahrenen Meter für den Tag eingetragen sind.
 
-- #### **[Optional] ** <br> An die Grün markierte Stelle kommt dein Telegram User Name rein damit dir das Skript eine Telegramm Nachricht sendet wen die Messer gewechselt werden müssen.
+- #### **[Optional]** <br> An die Grün markierte Stelle kommt dein Telegram User Name rein damit dir das Skript eine Telegramm Nachricht sendet wen die Messer gewechselt werden müssen.
 
 - #### An der Blau markierte Stelle wird der Text für die Warnmeldung eingetragen diese wird auch im Iobroker Log ausgegeben.
 
