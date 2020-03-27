@@ -1,4 +1,6 @@
 
+/* script version: 0.0.5 */
+
 /************************************* Debug / Logging ***********************************************/
 let debug = false;
 let force = false;
