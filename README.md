@@ -15,6 +15,8 @@ Weiter unten wird nichts mehr verändert.
 
 #### Unter **0_userdata.0.husqvarna** werden 7 Datenpunkte erstellt.
 
+![preview](media/Screenshot_dp.png)
+
 1.  **changing_knife** => Zeigt an das die Messer gewechselt werden müssen.
 2.  **drive_time** => zeigt die Zeit die der Mähroboter heute gefahren ist.
 3.  **driving_route** =>  zeigt die Fahrstrecke in km die der Mähroboter heute gefahren ist.
