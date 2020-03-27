@@ -2,89 +2,109 @@
 /************************************* Debug / Logging ***********************************************/
 let debug = false;
 let force = false;
-let dpErstellen = false;
 
-/************************************* Vor dem Start anpassen ***********************************************/
+
+/************************************* Vor dem Star anpassen ***********************************************/
+
+let telegramUser = 'Issi';
+
+let driveTimeDp = 'husq-automower.0.mower.statistics.mowingTimeDaily';
 
 let husqvarna = 'husq-automower.0.mower.statistics.coveredDistanceDaily';
 
-let telegramUser = 'Patrick';
-
 let alertMessage = 'Bitte hir denn Text der als Warnung ausgegeben werden soll eintragen';
-
-let driveTimeDp = 'husq-automower.0.mower.statistics.mowingTimeDaily';
 
 /************************************* dp Variablen ***********************************************/
 
 let preafix = '0_userdata.0';
-let changing_knife = 'husqvarna' + '.' + 'changing_knife';
-let telegram_changing_message = 'husqvarna' + '.' + 'telegram_changing_message';
-let warning_limit = 'husqvarna' + '.' + 'warning_limit';
+let drive_time = 'husqvarna' + '.' + 'drive_time';
 let rest_range = 'husqvarna' + '.' + 'rest_range';
 let knife_changed = 'husqvarna' + '.' + 'knife_changed';
-let drive_time = 'husqvarna' + '.' + 'drive_time';
 let driving_route = 'husqvarna' + '.' + 'driving_route';
+let warning_limit = 'husqvarna' + '.' + 'warning_limit';
+let changing_knife = 'husqvarna' + '.' + 'changing_knife';
+let telegram_changing_message = 'husqvarna' + '.' + 'telegram_changing_message';
 
 /******************************************************* restRange Function ***************************************************************************/
+
 let differenz;
 let range_new;
 let range_old;
-let Range = 0;
-
+let Range = null;
+let RangePuffer = null;
 let warning_limit_state = null;
 
+/* main function für die berechnung */
 function restRange() {
 
+    /* Warnlimit State wird abgefragt */
     warning_limit_state = getState(preafix + '.' + warning_limit).val;
-    if (debug) console.log('Warn limit in m: ' + warning_limit_state);
 
-    if (Range <= warning_limit_state) {
+    if (debug) console.log('Warnlimit in km: ' + warning_limit_state);
 
+    /* Prüfung ob Rest Range grösser als 0 ist */
+    if (Range > 0) {
+
+        /* Differenz vom neuen und alten wert */
         differenz = convertMeter((range_new - range_old));
 
+        /* prüfen ob Differenz kleiner 0 ist, wenn kleiner 0 Range wird dann nicht verändert */
         if (differenz <= 0) {
 
-            Range = (Range + 0);
+            Range = (Range - 0);
 
-            if (debug) console.log('Range bei kleiner als 0 ' + Range);
+            if (debug) console.log('Range kleiner als 0: ' + Range);
 
         } else {
 
-            Range = (Range + differenz);
+            /* Range Puffer wird für weitere Prüfungen erzeugt */
+            RangePuffer = (Range - differenz);
 
-            if (debug) console.log('Range bei größer als 0 ' + Range);
+            /* prüfen ob Range Puffer kleiner 0 ist, wenn kleiner 0 Range wird auf 0 gesetzt */
+            if (RangePuffer <= 0) {
+
+                Range = 0
+
+            } else {
+                /* Differenz wird von Range abgezogen */
+                Range = (Range - differenz);
+
+            }
+
+            if (debug) console.log('Range größer als 0: ' + Range);
 
         }
 
-        if (debug) console.log('differens ' + differenz);
+        if (debug) console.log('differenz ' + differenz);
     }
 
     if (debug) console.log('rest_range: ' + Math.round(Range * 1000) / 1000);
 
     if (debug) console.log('driving_route: ' + Math.round(convertMeter(range_new) * 1000) / 1000);
 
+    /* States werden geschrieben und in km umgerechnet */
     setState(preafix + '.' + driving_route, Math.round(convertMeter(range_new) * 1000) / 1000, true);
 
     setState(preafix + '.' + rest_range, Math.round(Range * 1000) / 1000, true);
 
-
-    if (Range >= warning_limit_state) {
+    /* prüfen ob Range gleich 0 ist, wenn 0 dann wird Telegramm Nachricht gesendet und state geschrieben */
+    if (Range === 0) {
 
         if (telegramMessage == true && telegramSend == false) telegramAlert(alertMessage);
 
         setState(preafix + '.' + changing_knife, true, true);
 
-        //warn nachricht im log
-        console.log(alertMessage, 'warn');
+       /* Warnung im iobroker log wird ausgegeben */
+        console.warn(alertMessage);
 
-        if (debug) console.log('Telegram Nachricht: ' + alertMessage);
+        if (debug) console.log('Telegramm Nachricht: ' + alertMessage);
 
     }
 
 }
 
 /******************************************************* convert Function ***************************************************************************/
-
+/* Konvertiert km in Meter um */
 function convertKM(km) {
 
     if (Number.isNaN(km)) {
@@ -95,6 +115,7 @@ function convertKM(km) {
     return km * 1000;
 };
 
+/* Konvertiert Meter in km um */
 function convertMeter(m) {
 
     if (Number.isNaN(m)) {
@@ -108,6 +129,7 @@ function convertMeter(m) {
 
 /******************************************************* driveTime Function ***************************************************************************/
 
+/* Fahrzeit wird auf Minuten in Stunden und Minuten umgerechnet */
 function driveTime() {
 
     let time = getState(driveTimeDp).val;
@@ -117,8 +139,11 @@ function driveTime() {
     let minuten = Math.floor(time % 60);
 
     minuten = (minuten > 9) ? minuten : "0" + minuten; // Führende "0"
+
     let newTime = stunden + "h " + minuten + "min";
+
     setState(preafix + '.' + drive_time, newTime, true);
+
     if (debug) console.log('Fahrzeit: ' + newTime);
 
 }
@@ -129,12 +154,16 @@ let telegramMessage;
 
 let telegramSend = false;
 
+/* Telegramm state wird initialisiert */
 function telegramInit() {
+
     telegramMessage = getState(preafix + '.' + telegram_changing_message).val;
+
     console.log('telegramMessage Status: ' + telegramMessage);
 
 }
 
+/* Telegramm sende function */
 function telegramAlert(text) {
 
     telegramSend = true;
@@ -148,17 +177,22 @@ function telegramAlert(text) {
 
 /******************************************************* Trigger ***************************************************************************/
 
+/* Telegramm sende Status wir um 0 Uhr zurückgestellt  */
 schedule('0 0 * * *', function () {
     telegramSend = false;
 
-    if (debug) console.log('telegram sende Status wurde um 0 Uhr zurückgesetzt');
+    if (debug) console.log('Telegram sende Status wurde um 0 Uhr zurückgesetzt');
+
 });
+
 
 on({ id: husqvarna, change: "ne" }, function (obj) {
     range_new = obj.state.val;
     range_old = obj.oldState.val;
-    restRange();
 
+    Range = getState(preafix + '.' + rest_range).val;
+
+    restRange();
 
 });
 
@@ -168,23 +202,28 @@ on({ id: driveTimeDp, change: "ne" }, function (obj) {
 
 });
 
+
 on({ id: preafix + '.' + telegram_changing_message, change: "ne" }, function (obj) {
 
     telegramInit();
 
 });
 
+
 on({ id: preafix + '.' + warning_limit, change: "ne" }, function (obj) {
 
-    Range = 0;
+
+    Range = obj.state.val;
 
     setState(preafix + '.' + rest_range, Range, true);
-    if (debug) console.log('limit wurde geändert');
+
+    if (debug) console.log('Limit wurde geändert');
+
 });
 
 on({ id: preafix + '.' + knife_changed, change: "any" }, function (obj) {
 
-    Range = 0;
+    Range = getState(preafix + '.' + warning_limit).val;
 
     differenz = 0;
 
@@ -198,57 +237,57 @@ on({ id: preafix + '.' + knife_changed, change: "any" }, function (obj) {
 
 });
 
-
+driveTime()
 /******************************************************* statesToCreate Function ***************************************************************************/
 
-let statesToCreate = [
+    let statesToCreate = [
 
-    [changing_knife, {
-        'name': 'Messer wechseln', 'type': 'boolean', 'read': true, 'write': false,
-        'role': 'switch', 'def': false
-    }],
+        [changing_knife, {
+            'name': 'Messer wechseln', 'type': 'boolean', 'read': true, 'write': false,
+            'role': 'switch', 'def': false
+        }],
 
-    [telegram_changing_message, {
-        'name': 'Messer wechseln Telegram meldung senden einschalten', 'type': 'boolean', 'read': true, 'write': true,
-        'role': 'switch', 'def': false
-    }],
+        [telegram_changing_message, {
+            'name': 'Messer wechseln Telegram meldung senden einschalten', 'type': 'boolean', 'read': true, 'write': true,
+            'role': 'switch', 'def': false
+        }],
 
-    [knife_changed, {
-        'name': 'Messer gewechselt', 'type': 'boolean', 'read': true, 'write': true,
-        'role': 'button', 'def': true
-    }],
+        [knife_changed, {
+            'name': 'Messer gewechselt', 'type': 'boolean', 'read': true, 'write': true,
+            'role': 'button', 'def': true
+        }],
 
-    [warning_limit, {
-        'name': 'Messer wechseln limit', 'type': 'number', 'read': true, 'write': true,
-        'role': 'state', 'def': 0, 'unit': 'km'
-    }],
+        [warning_limit, {
+            'name': 'Messer wechseln limit', 'type': 'number', 'read': true, 'write': true,
+            'role': 'state', 'def': 0, 'unit': 'km'
+        }],
 
-    [rest_range, {
-        'name': 'km bis zum Messer wechsel', 'type': 'number', 'read': true, 'write': false,
-        'role': 'state', 'def': 0, 'unit': 'km'
-    }],
+        [rest_range, {
+            'name': 'km bis zum Messer wechsel', 'type': 'number', 'read': true, 'write': false,
+            'role': 'state', 'def': 0, 'unit': 'km'
+        }],
 
-    [drive_time, {
-        'name': 'Fahrzeit', 'type': 'string', 'read': true, 'write': false,
-        'role': 'state'
-    }],
+        [drive_time, {
+            'name': 'Fahrzeit Heute', 'type': 'string', 'read': true, 'write': false,
+            'role': 'state'
+        }],
 
-    [driving_route, {
-        'name': 'Fahrstrecke in Km', 'type': 'number', 'read': true, 'write': false,
-        'role': 'state', 'def': 0, 'unit': 'km'
-    }],
+        [driving_route, {
+            'name': 'Fahrstrecke in Km', 'type': 'number', 'read': true, 'write': false,
+            'role': 'state', 'def': 0, 'unit': 'km'
+        }],
 
-];
-createUserStates(preafix, force, statesToCreate, function () {
-    if (debug) console.log('Jetzt sind alle States abgearbeitet und wir können nun fortfahren');
-    telegramInit();
-});
-
-
+    ];
+    createUserStates(preafix, force, statesToCreate, function () {
+        if (debug) console.log('Jetzt sind alle States abgearbeitet und wir können nun fortfahren');
+        telegramInit();
+    });
 
 
 
-if (dpErstellen) {
+
+
+
     function createUserStates(where, force, statesToCreate, callback = undefined) {
 
         const WARN = false; // Throws warning in log, if state is already existing and force=false. Default is false, so no warning in log, if state exists.
@@ -262,7 +301,7 @@ if (dpErstellen) {
         // Validate "where"
         if (where.endsWith('.')) where = where.slice(0, -1); // Remove trailing dot
         if ((where.match(/^javascript.([0-9]|[1-9][0-9])$/) == null) && (where.match(/^0_userdata.0$/) == null)) {
-            console.log('This script does not support to create states under [' + where + ']', 'error');
+            log('This script does not support to create states under [' + where + ']', 'error');
             return;
         }
 
@@ -273,7 +312,7 @@ if (dpErstellen) {
         let counter = -1;
         statesToCreate.forEach(function (param) {
             counter += 1;
-            if (LOG_DEBUG) console.log('[Debug] Currently processing following state: [' + param[0] + ']');
+            if (LOG_DEBUG) log('[Debug] Currently processing following state: [' + param[0] + ']');
 
             // Clean
             let stateId = param[0];
@@ -283,17 +322,17 @@ if (dpErstellen) {
 
             if (($(FULL_STATE_ID).length > 0) && (existsState(FULL_STATE_ID))) { // Workaround due to https://github.com/ioBroker/ioBroker.javascript/issues/478
                 // State is existing.
-                if (WARN && !force) console.log('State [' + FULL_STATE_ID + '] is already existing and will no longer be created.', 'warn');
-                if (!WARN && LOG_DEBUG) console.log('[Debug] State [' + FULL_STATE_ID + '] is already existing. Option force (=overwrite) is set to [' + force + '].');
+                if (WARN && !force) log('State [' + FULL_STATE_ID + '] is already existing and will no longer be created.', 'warn');
+                if (!WARN && LOG_DEBUG) log('[Debug] State [' + FULL_STATE_ID + '] is already existing. Option force (=overwrite) is set to [' + force + '].');
 
                 if (!force) {
                     // State exists and shall not be overwritten since force=false
                     // So, we do not proceed.
                     numStates--;
                     if (numStates === 0) {
-                        if (LOG_DEBUG) console.log('[Debug] All states successfully processed!');
+                        if (LOG_DEBUG) log('[Debug] All states successfully processed!');
                         if (typeof callback === 'function') { // execute if a function was provided to parameter callback
-                            if (LOG_DEBUG) console.log('[Debug] An optional callback function was provided, which we are going to execute now.');
+                            if (LOG_DEBUG) log('[Debug] An optional callback function was provided, which we are going to execute now.');
                             return callback();
                         }
                     } else {
@@ -312,9 +351,9 @@ if (dpErstellen) {
             obj.common = param[1];
             setObject(FULL_STATE_ID, obj, function (err) {
                 if (err) {
-                    console.log('Cannot write object for state [' + FULL_STATE_ID + ']: ' + err);
+                    log('Cannot write object for state [' + FULL_STATE_ID + ']: ' + err);
                 } else {
-                    if (LOG_DEBUG) console.log('[Debug] Now we are creating new state [' + FULL_STATE_ID + ']')
+                    if (LOG_DEBUG) log('[Debug] Now we are creating new state [' + FULL_STATE_ID + ']')
                     let init = null;
                     if (param[1].def === undefined) {
                         if (param[1].type === 'number') init = 0;
@@ -325,12 +364,12 @@ if (dpErstellen) {
                     }
                     setTimeout(function () {
                         setState(FULL_STATE_ID, init, true, function () {
-                            if (LOG_DEBUG) console.log('[Debug] setState durchgeführt: ' + FULL_STATE_ID);
+                            if (LOG_DEBUG) log('[Debug] setState durchgeführt: ' + FULL_STATE_ID);
                             numStates--;
                             if (numStates === 0) {
-                                if (LOG_DEBUG) console.log('[Debug] All states processed.');
+                                if (LOG_DEBUG) log('[Debug] All states processed.');
                                 if (typeof callback === 'function') { // execute if a function was provided to parameter callback
-                                    if (LOG_DEBUG) console.log('[Debug] Function to callback parameter was provided');
+                                    if (LOG_DEBUG) log('[Debug] Function to callback parameter was provided');
                                     return callback();
                                 }
                             }
@@ -340,5 +379,4 @@ if (dpErstellen) {
             });
         });
     }
-    console.log('dp on')
-}
+
