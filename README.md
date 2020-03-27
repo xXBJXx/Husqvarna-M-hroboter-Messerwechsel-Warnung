@@ -13,7 +13,7 @@
 
 Weiter unten wird nichts mehr verändert.
 
-#### Unter **0_userdata.0.husqvarna** werden 7 Datenpunkte erstellt.
+#### Unter **(0_userdata.0.husqvarna)** werden 7 Datenpunkte erstellt.
 
 ![preview](media/Screenshot_dp.png)
 
