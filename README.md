@@ -28,5 +28,7 @@ Weiter unten wird nichts mehr verändert.
 
 
 ## Changelog
+### 0.0.5 (2020-03-27)
+* (Issi) Rest range berechnung und beschreibung geändert  
 ### 0.0.1 (2020-03-27)
 * (Issi) Script Erstellt und hochgeladen 
