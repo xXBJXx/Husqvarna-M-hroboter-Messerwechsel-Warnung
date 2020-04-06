@@ -6,7 +6,7 @@ let debug = false;
 let force = false;
 
 
-/************************************* Vor dem Star anpassen ***********************************************/
+/************************************* Vor dem Start Anpassen ***********************************************/
 
 let telegramUser = 'Issi';
 
@@ -36,7 +36,7 @@ let Range = null;
 let RangePuffer = null;
 let warning_limit_state = null;
 
-/* main function für die berechnung */
+/* main function für die Berechnung */
 function restRange() {
 
     /* Warnlimit State wird abgefragt */
@@ -150,7 +150,7 @@ function driveTime() {
 
 }
 
-/******************************************************* Telegram Function ***************************************************************************/
+/******************************************************* Telegramm Function ***************************************************************************/
 
 let telegramMessage;
 
@@ -250,7 +250,7 @@ driveTime()
         }],
 
         [telegram_changing_message, {
-            'name': 'Messer wechseln Telegram meldung senden einschalten', 'type': 'boolean', 'read': true, 'write': true,
+            'name': 'Messer wechseln Telegram Meldung senden einschalten', 'type': 'boolean', 'read': true, 'write': true,
             'role': 'switch', 'def': false
         }],
 
